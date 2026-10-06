@@ -16,4 +16,5 @@
 - LangGraph/PostgreSQL probe used two disposable processes: first printed `paused=true`, second resumed `restart-proof-001` and printed `resumed=true decision=authenticated-confirmed`.
 - Generated 60 grouped evaluation scenarios (40 development, 20 holdout). No LLM was run; these are corpus counts, not quality metrics.
 - UI bound to `127.0.0.1:18000` because port 8000 was already occupied by an unrelated local service. Automated browser inspection was not run.
+- Published public repository `https://github.com/Kaique-ML/serviceops`; initial local/remote SHA matched at `8ba58cf304d467411bb3195ea3b8e9a3a238fc5e`. GitHub Actions run `37404052025` passed install, Ruff, mypy and pytest in 13 seconds.
 

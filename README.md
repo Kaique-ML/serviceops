@@ -49,3 +49,7 @@ python -m uv run pytest
 
 Architecture, threat boundaries, test levels, known limitations, and evidence are in [`docs/`](docs/). No distribution license has been selected; that decision remains with the repository owner.
 
+## Current limitations
+
+The v1 core API and reliability paths are executable, but the browser UI currently covers login/identity presentation rather than the complete customer and operator consoles. Automated browser E2E, handoff lifecycle verification, proposal editing/revocation, a real LLM run, and an n8n execution remain explicitly unverified in the acceptance matrix. Do not treat the deterministic demo as a production deployment or commercial ERP integration.
+

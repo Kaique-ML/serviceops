@@ -14,5 +14,5 @@
 | n8n workflow run | optional profile/workflow | NOT_RUN |
 | Browser inspection/screenshots | responsive login UI implemented | NOT_RUN |
 | 50-scenario evaluation | 60 scenarios generated; no model metrics | PASS (corpus only) |
-| Public GitHub repo and CI | pending valid `gh` authentication | BLOCKED |
+| Public GitHub repo and CI | `Kaique-ML/serviceops`; run 37404052025 passed for SHA `8ba58cf` | PASS |
 
