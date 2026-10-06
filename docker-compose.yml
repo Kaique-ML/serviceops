@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:17.6-bookworm
+    environment:
+      POSTGRES_DB: serviceops
+      POSTGRES_USER: serviceops
+      POSTGRES_PASSWORD: ${SERVICEOPS_DB_PASSWORD:-local-serviceops-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U serviceops -d serviceops"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes: [serviceops_db:/var/lib/postgresql/data]
+  operations-db:
+    image: postgres:17.6-bookworm
+    environment:
+      POSTGRES_DB: operations
+      POSTGRES_USER: operations
+      POSTGRES_PASSWORD: ${OPERATIONS_DB_PASSWORD:-local-operations-only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U operations -d operations"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes: [operations_db:/var/lib/postgresql/data]
+  operations-api:
+    build: .
+    command: ["uvicorn", "sandbox.operations_api.app:app", "--host", "0.0.0.0", "--port", "8081"]
+    environment:
+      OPERATIONS_DATABASE_URL: postgresql+psycopg://operations:${OPERATIONS_DB_PASSWORD:-local-operations-only}@operations-db:5432/operations
+      OPERATIONS_TOKEN: ${SERVICEOPS_OPERATIONS_TOKEN:-local-sandbox-token}
+      OPERATIONS_ALLOW_FAILURE_INJECTION: ${OPERATIONS_ALLOW_FAILURE_INJECTION:-false}
+    depends_on: {operations-db: {condition: service_healthy}}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health/live', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  web:
+    build: .
+    ports: ["127.0.0.1:${SERVICEOPS_PORT:-18000}:8000"]
+    environment: &app-env
+      SERVICEOPS_DATABASE_URL: postgresql+psycopg://serviceops:${SERVICEOPS_DB_PASSWORD:-local-serviceops-only}@db:5432/serviceops
+      SERVICEOPS_OPERATIONS_URL: http://operations-api:8081
+      SERVICEOPS_OPERATIONS_TOKEN: ${SERVICEOPS_OPERATIONS_TOKEN:-local-sandbox-token}
+      SERVICEOPS_SESSION_SECRET: ${SERVICEOPS_SESSION_SECRET:-local-development-session-secret-change}
+      SERVICEOPS_DEMO_MODE: ${SERVICEOPS_DEMO_MODE:-true}
+      SERVICEOPS_DEMO_PASSWORD: ${SERVICEOPS_DEMO_PASSWORD:-Demo-Only-Change-Me}
+      OPERATIONS_DATABASE_URL: postgresql+psycopg://operations:${OPERATIONS_DB_PASSWORD:-local-operations-only}@operations-db:5432/operations
+      OPERATIONS_TOKEN: ${SERVICEOPS_OPERATIONS_TOKEN:-local-sandbox-token}
+    depends_on: {db: {condition: service_healthy}, operations-api: {condition: service_healthy}}
+  worker:
+    build: .
+    command: ["python", "-m", "serviceops.workers.dispatcher"]
+    environment: *app-env
+    depends_on: {db: {condition: service_healthy}, operations-api: {condition: service_healthy}}
+  n8n:
+    image: n8nio/n8n:1.113.3
+    profiles: ["n8n"]
+    ports: ["127.0.0.1:5678:5678"]
+    environment:
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_SECURE_COOKIE: "false"
+    volumes: [n8n_data:/home/node/.n8n]
+volumes:
+  serviceops_db:
+  operations_db:
+  n8n_data:
+
